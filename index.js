@@ -11,7 +11,7 @@ class Authorization {
 
     query(accessToken) {
         let options = {
-            uri: 'https://security.amnt.fr/user',
+            uri: 'https://security.amnt.fr/auth/user',
             headers: {
                 'Authorization': 'Bearer ' + accessToken
             },
