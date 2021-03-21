@@ -5,13 +5,14 @@ const request = require('request');
 const debug = util.debuglog('ammonite-authentication');
 
 class Authorization {
-    constructor() {
+    constructor(getUserURL) {
+        this.getUserURL = getUserURL;
         this.cache = [];
     }
 
     query(accessToken) {
         let options = {
-            uri: 'https://security.amnt.fr/auth/user',
+            uri: this.getUserURL,
             headers: {
                 'Authorization': 'Bearer ' + accessToken
             },
@@ -19,15 +20,15 @@ class Authorization {
         };
 
         return new Promise((resolve, reject) => {
-            request(options, function(err, res) {
+            request(options, function (err, res) {
                 if (err) return reject(err);
-    
+
                 if (res.statusCode != 200) {
                     let error = new Error('request failed');
                     error.body = res.body;
                     return reject(error);
                 }
-    
+
                 return resolve(res.body);
             });
         });
@@ -52,7 +53,7 @@ class Authorization {
         return token;
     };
 
-    middleware(req, res, next) {
+    handle(req, res, next) {
         let accessToken = this.extractAccessToken(req);
 
         if (!accessToken) {
@@ -84,9 +85,12 @@ class Authorization {
             return res.status(401).json({ message });
         });
     }
+
+    middleware() {
+        return (req, res, next) => {
+            return this.handle(req, res, next);
+        };
+    }
 }
 
-const authorization = new Authorization();
-module.exports = (req, res, next) => {
-    return authorization.middleware(req, res,next);
-};
+module.exports = Authorization;
