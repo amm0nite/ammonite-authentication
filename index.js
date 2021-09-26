@@ -1,6 +1,6 @@
 
 const util = require('util');
-const request = require('request');
+const axios = require('axios');
 
 const debug = util.debuglog('ammonite-authentication');
 
@@ -10,28 +10,15 @@ class Authorization {
         this.cache = [];
     }
 
-    query(accessToken) {
+    async query(accessToken) {
         let options = {
-            uri: this.getUserURL,
             headers: {
                 'Authorization': 'Bearer ' + accessToken
-            },
-            json: true
+            }
         };
 
-        return new Promise((resolve, reject) => {
-            request(options, function (err, res) {
-                if (err) return reject(err);
-
-                if (res.statusCode != 200) {
-                    let error = new Error('request failed');
-                    error.body = res.body;
-                    return reject(error);
-                }
-
-                return resolve(res.body);
-            });
-        });
+        const response = await axios.get(this.getUserURL, options);
+        return response.data;
     }
 
     removeFromCache(accessToken) {
@@ -78,11 +65,7 @@ class Authorization {
             return next();
         }).catch((err) => {
             debug(err);
-            let message = err.message;
-            if (err.body && err.body.message) {
-                message = err.body.message;
-            }
-            return res.status(401).json({ message });
+            return res.status(401).json({ message: err.message });
         });
     }
 
