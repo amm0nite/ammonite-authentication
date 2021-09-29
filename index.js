@@ -7,7 +7,7 @@ const debug = util.debuglog('ammonite-authentication');
 class Authorization {
     constructor(getUserURL) {
         this.getUserURL = getUserURL;
-        this.cache = [];
+        this.cache = new Map();
     }
 
     async query(accessToken) {
@@ -19,10 +19,6 @@ class Authorization {
 
         const response = await axios.get(this.getUserURL, options);
         return response.data;
-    }
-
-    removeFromCache(accessToken) {
-        this.cache = this.cache.filter((element) => element.accessToken !== accessToken);
     }
 
     extractAccessToken(req) {
@@ -47,7 +43,7 @@ class Authorization {
             return res.status(403).json({ 'message': 'no token' });
         }
 
-        const cached = this.cache.find((element) => element.accessToken === accessToken);
+        const cached = this.cache.get(accessToken);
         if (cached) {
             req.user = cached.data;
             return next();
@@ -58,8 +54,8 @@ class Authorization {
             data.uid = data.id;
             data.access_token = accessToken;
 
-            this.cache.push({ time: Date.now(), accessToken, data });
-            setTimeout(() => this.removeFromCache(accessToken), 60 * 1000);
+            const timeout = setTimeout(() => this.cache.delete(accessToken), 60 * 1000);
+            this.cache.set(accessToken, { time: Date.now(), data, timeout });
 
             req.user = data;
             return next();
@@ -67,6 +63,12 @@ class Authorization {
             debug(err);
             return res.status(401).json({ message: err.message });
         });
+    }
+
+    close() {
+        for (const session of this.cache.values) {
+            clearTimeout(session.timeout);
+        }
     }
 
     middleware() {
