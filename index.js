@@ -8,6 +8,7 @@ class Authorization {
     constructor(getUserURL) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
+        this.cacheTime = 60 * 1000;
     }
 
     async query(accessToken) {
@@ -46,6 +47,7 @@ class Authorization {
         const cached = this.cache.get(accessToken);
         if (cached) {
             req.user = cached.data;
+            req.user.cached = true;
             return next();
         }
 
@@ -53,8 +55,9 @@ class Authorization {
         this.query(accessToken).then((data) => {
             data.uid = data.id;
             data.access_token = accessToken;
+            data.cached = false;
 
-            const timeout = setTimeout(() => this.cache.delete(accessToken), 60 * 1000);
+            const timeout = setTimeout(() => this.cache.delete(accessToken), this.cacheTime);
             this.cache.set(accessToken, { time: Date.now(), data, timeout });
 
             req.user = data;
@@ -66,7 +69,7 @@ class Authorization {
     }
 
     close() {
-        for (const session of this.cache.values) {
+        for (const session of this.cache.values()) {
             clearTimeout(session.timeout);
         }
     }
