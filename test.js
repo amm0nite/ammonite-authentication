@@ -30,9 +30,11 @@ const server = app.listen(port, function () {
 
     axios.get(baseUrl, options).then((res) => {
         console.log(res.data);
+        auth.close();
         server.close();
     }).catch((err) => {
         console.log(err);
+        auth.close();
         server.close();
     });
 });
