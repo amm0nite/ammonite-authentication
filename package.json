@@ -4,7 +4,7 @@
   "description": "Ammonite authentication for Express",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test.js",
     "start": "NODE_DEBUG=ammonite-authentication node test.js"
   },
   "repository": {
@@ -20,5 +20,8 @@
   "dependencies": {
     "axios": "^0.21.4",
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "mocha": "^9.1.2"
   }
 }
