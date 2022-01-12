@@ -15,13 +15,20 @@ describe('middleware', function () {
     let server = null;
     let app = null;
 
-    beforeEach(function (next) {
-        auth = new Authentication(`${baseUrl}/user200`);
-
+    async function setup(...args) {
         app = express();
+        auth = new Authentication(...args);
 
         app.get('/user200', (req, res) => {
             return res.json({ login, id });
+        });
+
+        app.get('/user200Reader', (req, res) => {
+            return res.json({ login, id, permission: 'read' });
+        });
+
+        app.get('/user200All', (req, res) => {
+            return res.json({ login, id, permission: 'all' });
         });
 
         app.get('/user401', (req, res) => {
@@ -32,10 +39,12 @@ describe('middleware', function () {
             res.status(200).json(req.user);
         });
 
-        server = app.listen(port, () => {
-            return next();
+        return new Promise((resolve) => {
+            server = app.listen(port, () => {
+                return resolve();
+            });
         });
-    });
+    }
 
     afterEach(function () {
         server.close();
@@ -43,6 +52,8 @@ describe('middleware', function () {
     });
 
     it('should provide user details', async function () {
+        await setup(`${baseUrl}/user200`);
+
         const token = 'helloworld';
         const options = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -57,17 +68,42 @@ describe('middleware', function () {
         assert.equal(secondResponse.data.cached, true);
     });
 
-    it('should return unauthorized', async function () {
-        auth.getUserURL = `${baseUrl}/user401`;
-
+    async function checkStatus(expected) {
         const token = 'helloworld';
         const options = { headers: { Authorization: `Bearer ${token}` } };
 
         try {
             const response = await axios.get(baseUrl, options);
-            assert.fail("Should fail as unauthorized");
+            if (expected < 400) {
+                assert.equal(response.status, expected);
+                return;
+            }
+            assert.fail(`Should fail with status ${expected}`);
         } catch (err) {
-            assert.equal(err.response.status, 401);
+            if (!err.response) {
+                throw err;
+            }
+            assert.equal(err.response.status, expected);
         }
+    }
+
+    it('should deny access when authentication fails', async function () {
+        await setup(`${baseUrl}/user401`);
+        await checkStatus(401);
+    });
+
+    it('should deny access when authorization fails', async function () {
+        await setup(`${baseUrl}/user200Reader`, 'write');
+        await checkStatus(403);
+    });
+
+    it('should allow access with the right permission', async function () {
+        await setup(`${baseUrl}/user200Reader`, 'read');
+        await checkStatus(200);
+    });
+
+    it('should allow access with the "all" permission', async function () {
+        await setup(`${baseUrl}/user200All`, 'execute');
+        await checkStatus(200);
     });
 });
