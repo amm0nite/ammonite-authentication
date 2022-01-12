@@ -5,10 +5,11 @@ const axios = require('axios');
 const debug = util.debuglog('ammonite-authentication');
 
 class Authorization {
-    constructor(getUserURL) {
+    constructor(getUserURL, permission) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
         this.cacheTime = 60 * 1000;
+        this.permission = permission;
     }
 
     async query(accessToken) {
@@ -37,7 +38,7 @@ class Authorization {
         return token;
     };
 
-    handle(req, res, next) {
+    authenticate(req, res, next) {
         let accessToken = this.extractAccessToken(req);
 
         if (!accessToken) {
@@ -68,6 +69,22 @@ class Authorization {
         });
     }
 
+    authorize(req, res, next) {
+        if (!this.permission) {
+            return next();
+        }
+
+        if (req.user.permission === this.permission) {
+            return next();
+        }
+
+        if (req.user.permission === 'all') {
+            return next();
+        }
+
+        return res.status(403).json({ message: 'no permission' });
+    }
+
     close() {
         for (const session of this.cache.values()) {
             clearTimeout(session.timeout);
@@ -76,7 +93,9 @@ class Authorization {
 
     middleware() {
         return (req, res, next) => {
-            return this.handle(req, res, next);
+            this.authenticate(req, res, () => {
+                this.authorize(req, res, next);
+            });
         };
     }
 }
