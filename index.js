@@ -5,11 +5,11 @@ const axios = require('axios');
 const debug = util.debuglog('ammonite-authentication');
 
 class Authorization {
-    constructor(getUserURL, permission) {
+    constructor(getUserURL, scopes) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
         this.cacheTime = 60 * 1000;
-        this.permission = permission;
+        this.scopes = scopes;
     }
 
     async query(accessToken) {
@@ -38,22 +38,26 @@ class Authorization {
         return token;
     };
 
-    authenticate(req, res, next) {
+    async authenticate(req, res) {
         let accessToken = this.extractAccessToken(req);
 
         if (!accessToken) {
-            return res.status(403).json({ 'message': 'no token' });
+            const err = new Error('no token');
+            err.status = 403;
+            throw err;
         }
 
         const cached = this.cache.get(accessToken);
         if (cached) {
             req.user = cached.data;
             req.user.cached = true;
-            return next();
+            return;
         }
 
-        debug('refreshing user from api');
-        this.query(accessToken).then((data) => {
+        try {
+            debug('refreshing user from api');
+            const data = await this.query(accessToken);
+
             data.uid = data.id;
             data.access_token = accessToken;
             data.cached = false;
@@ -62,27 +66,34 @@ class Authorization {
             this.cache.set(accessToken, { time: Date.now(), data, timeout });
 
             req.user = data;
-            return next();
-        }).catch((err) => {
-            debug(err);
-            return res.status(401).json({ message: err.message });
-        });
+        } catch (err) {
+            err.status = 401;
+            throw err;
+        }
     }
 
-    authorize(req, res, next) {
-        if (!this.permission) {
-            return next();
+    async authorize(req, res) {
+        let userScopes = req.user.scopes ?? [];
+        if (typeof userScopes === 'string') {
+            userScopes = [userScopes];
         }
 
-        if (req.user.permission === this.permission) {
-            return next();
+        if (userScopes.includes('all')) {
+            return;
         }
 
-        if (req.user.permission === 'all') {
-            return next();
+        let serverScopes = this.scopes ?? [];
+        if (typeof serverScopes === 'string') {
+            serverScopes = [serverScopes];
         }
 
-        return res.status(403).json({ message: 'no permission' });
+        for (const scope of serverScopes) {
+            if (!userScopes.includes(scope)) {
+                const err = new Error(`missing scope ${scope}`);
+                err.status = 403;
+                throw err;
+            }
+        }
     }
 
     close() {
@@ -93,10 +104,23 @@ class Authorization {
 
     middleware() {
         return (req, res, next) => {
-            this.authenticate(req, res, () => {
-                this.authorize(req, res, next);
+            Promise.resolve().then(() => {
+                return this.authenticate(req, res)
+            }).then(() => {
+                return this.authorize(req, res);
+            }).then(() => {
+                return next();
+            })
+            .catch((err) => {
+                this.handleError(req, res, err);
             });
         };
+    }
+
+    handleError(req, res, err) {
+        const status = err.status ?? 500;
+        const message = err.message;
+        return res.status(status).json({ message });
     }
 }
 

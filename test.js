@@ -24,11 +24,15 @@ describe('middleware', function () {
         });
 
         app.get('/user200Reader', (req, res) => {
-            return res.json({ login, id, permission: 'read' });
+            return res.json({ login, id, scopes: 'read' });
+        });
+
+        app.get('/user200ReaderWriter', (req, res) => {
+            return res.json({ login, id, scopes: ['read', 'write'] });
         });
 
         app.get('/user200All', (req, res) => {
-            return res.json({ login, id, permission: 'all' });
+            return res.json({ login, id, scopes: 'all' });
         });
 
         app.get('/user401', (req, res) => {
@@ -83,7 +87,7 @@ describe('middleware', function () {
             if (!err.response) {
                 throw err;
             }
-            assert.equal(err.response.status, expected);
+            assert.equal(err.response.status, expected, err.message);
         }
     }
 
@@ -97,13 +101,18 @@ describe('middleware', function () {
         await checkStatus(403);
     });
 
-    it('should allow access with the right permission', async function () {
+    it('should allow access with valid scope', async function () {
         await setup(`${baseUrl}/user200Reader`, 'read');
         await checkStatus(200);
     });
 
-    it('should allow access with the "all" permission', async function () {
-        await setup(`${baseUrl}/user200All`, 'execute');
+    it('should allow access with valid scopes', async function () {
+        await setup(`${baseUrl}/user200ReaderWriter`, 'write');
+        await checkStatus(200);
+    });
+
+    it('should allow access with "all" scope', async function () {
+        await setup(`${baseUrl}/user200All`, ['A', 'B']);
         await checkStatus(200);
     });
 });
