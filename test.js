@@ -44,9 +44,7 @@ describe('middleware', function () {
         });
 
         return new Promise((resolve) => {
-            server = app.listen(port, () => {
-                return resolve();
-            });
+            server = app.listen(port, resolve);
         });
     }
 

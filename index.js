@@ -4,7 +4,7 @@ const axios = require('axios');
 
 const debug = util.debuglog('ammonite-authentication');
 
-class Authorization {
+class Auth {
     constructor(getUserURL, scopes) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
@@ -124,4 +124,4 @@ class Authorization {
     }
 }
 
-module.exports = Authorization;
+module.exports = Auth;
