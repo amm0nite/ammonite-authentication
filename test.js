@@ -1,8 +1,8 @@
-const assert = require('assert');
-const express = require('express');
-const axios = require('axios');
+import assert from 'assert';
+import express from 'express';
+import axios from 'axios';
 
-const Authentication = require('./index.js');
+import Authentication from './index.js';
 
 describe('middleware', function () {
     const port = 3000;

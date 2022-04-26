@@ -2,10 +2,10 @@
   "name": "ammonite-authentication",
   "version": "2.3.3",
   "description": "Ammonite authentication for Express",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test.js",
-    "start": "NODE_DEBUG=ammonite-authentication node test.js"
+    "test": "mocha test.js"
   },
   "repository": {
     "type": "git",

@@ -1,10 +1,9 @@
-
-const util = require('util');
-const axios = require('axios');
+import util from 'util';
+import axios from 'axios';
 
 const debug = util.debuglog('ammonite-authentication');
 
-class Auth {
+export default class Auth {
     constructor(getUserURL) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
@@ -129,5 +128,3 @@ class Auth {
         return res.status(status).json({ message });
     }
 }
-
-module.exports = Auth;
