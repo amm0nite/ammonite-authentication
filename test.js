@@ -15,9 +15,9 @@ describe('middleware', function () {
     let server = null;
     let app = null;
 
-    async function setup(...args) {
+    async function setup(getUserURL, scopes) {
         app = express();
-        auth = new Authentication(...args);
+        auth = new Authentication(getUserURL);
 
         app.get('/user200', (req, res) => {
             return res.json({ login, id });
@@ -39,7 +39,7 @@ describe('middleware', function () {
             return res.status(401).json({ message: "bad token" });
         });
 
-        app.get('/', auth.middleware(), (req, res) => {
+        app.get('/', auth.middleware(scopes), (req, res) => {
             res.status(200).json(req.user);
         });
 

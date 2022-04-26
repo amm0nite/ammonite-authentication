@@ -5,11 +5,10 @@ const axios = require('axios');
 const debug = util.debuglog('ammonite-authentication');
 
 class Auth {
-    constructor(getUserURL, scopes) {
+    constructor(getUserURL) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
         this.cacheTime = 60 * 1000;
-        this.scopes = scopes;
     }
 
     async query(accessToken) {
@@ -38,7 +37,7 @@ class Auth {
         return token;
     };
 
-    async authenticate(req, res) {
+    async authenticate(req) {
         let accessToken = this.extractAccessToken(req);
 
         if (!accessToken) {
@@ -72,20 +71,27 @@ class Auth {
         }
     }
 
-    async authorize(req, res) {
-        let userScopes = req.user.scopes ?? [];
-        if (typeof userScopes === 'string') {
-            userScopes = [userScopes];
+    normalizeScopes(scopes) {
+        if (!scopes) {
+            return [];
         }
+        if (typeof scopes === 'string') {
+            return [scopes];
+        }
+        if (!Array.isArray(scopes)) {
+            throw new Error('scopes should be an array');
+        }
+        return scopes;
+    }
+
+    async authorize(scopes, req) {
+        const userScopes = this.normalizeScopes(req.user.scopes);
 
         if (userScopes.includes('all')) {
             return;
         }
 
-        let serverScopes = this.scopes ?? [];
-        if (typeof serverScopes === 'string') {
-            serverScopes = [serverScopes];
-        }
+        const serverScopes = this.normalizeScopes(scopes);
 
         for (const scope of serverScopes) {
             if (!userScopes.includes(scope)) {
@@ -102,12 +108,12 @@ class Auth {
         }
     }
 
-    middleware() {
+    middleware(scopes) {
         return (req, res, next) => {
             Promise.resolve().then(() => {
-                return this.authenticate(req, res)
+                return this.authenticate(req)
             }).then(() => {
-                return this.authorize(req, res);
+                return this.authorize(scopes, req);
             }).then(() => {
                 return next();
             })
