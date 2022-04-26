@@ -1,6 +1,6 @@
 {
   "name": "ammonite-authentication",
-  "version": "2.3.3",
+  "version": "3.0.0",
   "description": "Ammonite authentication for Express",
   "type": "module",
   "main": "index.js",
