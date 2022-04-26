@@ -24,12 +24,12 @@ class Auth {
     }
 
     extractAccessToken(req) {
-        var token = req.get('Authorization');
+        let token = req.get('Authorization');
         if (!token) {
             return null;
         }
 
-        var bearerPrefix = 'Bearer';
+        const bearerPrefix = 'Bearer';
         if (token.startsWith(bearerPrefix)) {
             token = token.substring(bearerPrefix.length).trim();
         }
