@@ -114,3 +114,25 @@ describe('middleware', function () {
         await checkStatus(200);
     });
 });
+
+describe('extractAccessToken', function() {
+    it('should extract a Bearer token', function() {
+        const auth = new Authentication('test');
+        const expected = 'testtoken1';
+        const req = { get: () => `Bearer ${expected}` };
+        const actual = auth.extractAccessToken(req);
+
+        assert.ok(actual);
+        assert.strictEqual(actual, expected);
+    });
+    it('should extract a Basic password', function() {
+        const auth = new Authentication('test');
+        const expected = 'testtoken2';
+        const encoded = Buffer.from(`username:${expected}`, 'utf8').toString('base64');
+        const req = { get: () => `Basic ${encoded}` };
+        const actual = auth.extractAccessToken(req);
+
+        assert.ok(actual);
+        assert.strictEqual(actual, expected);
+    });
+});

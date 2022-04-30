@@ -27,7 +27,16 @@ export default class Auth {
             return null;
         }
 
+        const basicPrefix = 'Basic';
         const bearerPrefix = 'Bearer';
+
+        if (token.startsWith(basicPrefix)) {
+            const encoded = token.substring(basicPrefix.length).trim();
+            const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+            const parts = decoded.split(':');
+            if (parts.length !== 2) return null;
+            token = parts[1];
+        }
         if (token.startsWith(bearerPrefix)) {
             token = token.substring(bearerPrefix.length).trim();
         }
