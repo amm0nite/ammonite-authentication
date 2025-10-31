@@ -18,10 +18,10 @@
   },
   "homepage": "https://github.com/amm0nite/ammonite-authentication#readme",
   "dependencies": {
-    "axios": "^1.12.2",
+    "axios": "^1.13.1",
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "mocha": "^11.7.3"
+    "mocha": "^11.7.4"
   }
 }
