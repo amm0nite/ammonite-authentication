@@ -56,23 +56,23 @@ export default class Auth {
 
         const cached = this.cache.get(accessToken);
         if (cached) {
-            req.user = cached.data;
-            req.user.cached = true;
+            req.user = { ...cached.data, cached: true };
             return;
         }
 
         try {
             debug('refreshing user from api');
-            const data = await this.query(accessToken);
-
-            data.uid = data.id;
-            data.access_token = accessToken;
-            data.cached = false;
+            const rawData = await this.query(accessToken);
+            const userData = {
+                ...rawData,
+                uid: rawData.id,
+                access_token: accessToken,
+            };
 
             const timeout = setTimeout(() => this.cache.delete(accessToken), this.cacheTime);
-            this.cache.set(accessToken, { time: Date.now(), data, timeout });
+            this.cache.set(accessToken, { time: Date.now(), data: userData, timeout });
 
-            req.user = data;
+            req.user = { ...userData, cached: false };
         } catch (err) {
             err.status = 401;
             throw err;

@@ -15,7 +15,7 @@ describe('middleware', function () {
     let server = null;
     let app = null;
 
-    async function setup(getUserURL, scopes) {
+    async function setup(getUserURL, scopes, mutate) {
         app = express();
         auth = new Authentication(getUserURL);
 
@@ -40,6 +40,9 @@ describe('middleware', function () {
         });
 
         app.get('/', auth.middleware(scopes), (req, res) => {
+            if (mutate) {
+                mutate(req.user);
+            }
             res.status(200).json(req.user);
         });
 
@@ -112,6 +115,27 @@ describe('middleware', function () {
     it('should allow access with "all" scope', async function () {
         await setup(`${baseUrl}/user200All`, ['A', 'B']);
         await checkStatus(200);
+    });
+
+    it('should not leak per-request user mutations into the cache', async function () {
+        let calls = 0;
+        await setup(`${baseUrl}/user200ReaderWriter`, 'write', (user) => {
+            calls += 1;
+            if (calls === 1) {
+                user.tampered = true;
+            }
+        });
+
+        const token = 'helloworld';
+        const options = { headers: { Authorization: `Bearer ${token}` } };
+
+        const first = await axios.get(baseUrl, options);
+        assert.strictEqual(first.data.tampered, true);
+        assert.strictEqual(first.data.cached, false);
+
+        const second = await axios.get(baseUrl, options);
+        assert.strictEqual(second.data.tampered, undefined);
+        assert.strictEqual(second.data.cached, true);
     });
 });
 
