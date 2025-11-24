@@ -39,6 +39,10 @@ describe('middleware', function () {
             return res.status(401).json({ message: "bad token" });
         });
 
+        app.get('/user500', (req, res) => {
+            return res.status(500).json({ message: "upstream failure" });
+        });
+
         app.get('/', auth.middleware(scopes), (req, res) => {
             if (mutate) {
                 mutate(req.user);
@@ -115,6 +119,11 @@ describe('middleware', function () {
     it('should allow access with "all" scope', async function () {
         await setup(`${baseUrl}/user200All`, ['A', 'B']);
         await checkStatus(200);
+    });
+
+    it('should propagate upstream 5xx errors', async function () {
+        await setup(`${baseUrl}/user500`);
+        await checkStatus(500);
     });
 
     it('should not leak per-request user mutations into the cache', async function () {

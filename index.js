@@ -75,7 +75,12 @@ export default class Auth {
 
             req.user = { ...userData, cached: false };
         } catch (err) {
-            err.status = 401;
+            const upstreamStatus = err?.response?.status;
+            if (upstreamStatus) {
+                err.status = upstreamStatus;
+            } else if (err.request) {
+                err.status = 502;
+            }
             throw err;
         }
     }
