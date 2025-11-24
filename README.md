@@ -52,6 +52,16 @@ auth.middleware(requiredScopes?)
   - `access_token`: the bearer token used
   - `cached`: `false` on fresh fetch, `true` on cache hits
 
+### Upstream userinfo response requirements
+
+Your userinfo endpoint must return JSON with at least:
+
+- `id`: unique identifier for the user
+- `login`: username/display name (used only by your app)
+- `scopes`: optional; string or string[] of scopes. If omitted or empty, authorization will fail when scopes are required. The special scope `all` grants all access.
+
+Any additional fields are passed through to `req.user`.
+
 ### Error Handling
 
 - Missing/invalid token → `401` with `WWW-Authenticate: Bearer`.
@@ -68,11 +78,3 @@ auth.middleware(requiredScopes?)
 
 - In-memory per-instance cache keyed by access token.
 - Call `auth.close()` during shutdown to clear timers and cached entries.
-
-## Testing
-
-```bash
-npm test
-```
-
-Mocha tests spin up a local Express app and exercise authentication, authorization, caching, and error paths.
