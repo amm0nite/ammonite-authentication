@@ -137,6 +137,19 @@ describe('middleware', function () {
         assert.strictEqual(second.data.tampered, undefined);
         assert.strictEqual(second.data.cached, true);
     });
+
+    it('should respond 401 with WWW-Authenticate when token is missing', async function () {
+        await setup(`${baseUrl}/user200`);
+
+        try {
+            await axios.get(baseUrl);
+            assert.fail('should fail without token');
+        } catch (err) {
+            assert.ok(err.response);
+            assert.strictEqual(err.response.status, 401);
+            assert.strictEqual(err.response.headers['www-authenticate'], 'Bearer');
+        }
+    });
 });
 
 describe('extractAccessToken', function() {

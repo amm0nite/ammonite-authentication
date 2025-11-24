@@ -50,7 +50,8 @@ export default class Auth {
 
         if (!accessToken) {
             const err = new Error('no token');
-            err.status = 403;
+            err.status = 401;
+            err.wwwAuthenticate = 'Bearer';
             throw err;
         }
 
@@ -134,6 +135,9 @@ export default class Auth {
     handleError(req, res, err) {
         const status = err.status ?? 500;
         const message = err.message;
+        if (status === 401 && err.wwwAuthenticate) {
+            res.set('WWW-Authenticate', err.wwwAuthenticate);
+        }
         return res.status(status).json({ message });
     }
 }
