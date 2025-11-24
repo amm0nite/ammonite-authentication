@@ -4,17 +4,19 @@ import axios from 'axios';
 const debug = util.debuglog('ammonite-authentication');
 
 export default class Auth {
-    constructor(getUserURL) {
+    constructor(getUserURL, options = {}) {
         this.getUserURL = getUserURL;
         this.cache = new Map();
-        this.cacheTime = 60 * 1000;
+        this.cacheTime = options.cacheTime ?? 60 * 1000;
+        this.requestTimeout = options.requestTimeout ?? 5000;
     }
 
     async query(accessToken) {
         let options = {
             headers: {
                 'Authorization': 'Bearer ' + accessToken
-            }
+            },
+            timeout: this.requestTimeout,
         };
 
         const response = await axios.get(this.getUserURL, options);

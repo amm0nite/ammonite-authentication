@@ -15,9 +15,9 @@ describe('middleware', function () {
     let server = null;
     let app = null;
 
-    async function setup(getUserURL, scopes, mutate) {
+    async function setup(getUserURL, scopes, mutate, authOptions) {
         app = express();
-        auth = new Authentication(getUserURL);
+        auth = new Authentication(getUserURL, authOptions);
 
         app.get('/user200', (req, res) => {
             return res.json({ login, id });
@@ -41,6 +41,10 @@ describe('middleware', function () {
 
         app.get('/user500', (req, res) => {
             return res.status(500).json({ message: "upstream failure" });
+        });
+
+        app.get('/userSlow', (req, res) => {
+            setTimeout(() => res.json({ login, id }), 200);
         });
 
         app.get('/', auth.middleware(scopes), (req, res) => {
@@ -124,6 +128,11 @@ describe('middleware', function () {
     it('should propagate upstream 5xx errors', async function () {
         await setup(`${baseUrl}/user500`);
         await checkStatus(500);
+    });
+
+    it('should time out slow upstream calls', async function () {
+        await setup(`${baseUrl}/userSlow`, null, null, { requestTimeout: 50 });
+        await checkStatus(502);
     });
 
     it('should not leak per-request user mutations into the cache', async function () {
