@@ -122,6 +122,7 @@ export default class Auth {
         for (const session of this.cache.values()) {
             clearTimeout(session.timeout);
         }
+        this.cache.clear();
     }
 
     middleware(scopes) {
