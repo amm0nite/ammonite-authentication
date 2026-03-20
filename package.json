@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/amm0nite/ammonite-authentication#readme",
   "dependencies": {
-    "axios": "^1.13.2"
+    "axios": "^1.13.6"
   },
   "devDependencies": {
     "express": "^5.2.1",
