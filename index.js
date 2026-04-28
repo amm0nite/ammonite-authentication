@@ -7,6 +7,7 @@ export default class Auth {
         this.getUserURL = getUserURL;
         this.cache = new Map();
         this.cacheTime = options.cacheTime ?? 60 * 1000;
+        this.cacheSize = options.cacheSize ?? 1024;
         this.requestTimeout = options.requestTimeout ?? 5000;
     }
 
@@ -39,7 +40,7 @@ export default class Auth {
         if (token.startsWith(basicPrefix)) {
             const encoded = token.substring(basicPrefix.length).trim();
             const decoded = Buffer.from(encoded, 'base64').toString('utf8');
-            const parts = decoded.split(':');
+            const parts = decoded.split(':', 2);
             if (parts.length !== 2) return null;
             token = parts[1];
         }
@@ -77,7 +78,10 @@ export default class Auth {
             };
 
             const timeout = setTimeout(() => this.cache.delete(accessToken), this.cacheTime);
-            this.cache.set(accessToken, { time: Date.now(), data: userData, timeout });
+
+            if (this.cache.size < this.cacheSize) {
+                this.cache.set(accessToken, { time: Date.now(), data: userData, timeout });
+            }
 
             req.user = { ...userData, cached: false };
         } catch (err) {
