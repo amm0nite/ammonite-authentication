@@ -77,9 +77,8 @@ export default class Auth {
                 access_token: accessToken,
             };
 
-            const timeout = setTimeout(() => this.cache.delete(accessToken), this.cacheTime);
-
             if (this.cache.size < this.cacheSize) {
+                const timeout = setTimeout(() => this.cache.delete(accessToken), this.cacheTime);
                 this.cache.set(accessToken, { time: Date.now(), data: userData, timeout });
             }
 
