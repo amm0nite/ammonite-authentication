@@ -1,5 +1,4 @@
 import util from 'util';
-import axios from 'axios';
 
 const debug = util.debuglog('ammonite-authentication');
 
@@ -12,15 +11,20 @@ export default class Auth {
     }
 
     async query(accessToken) {
-        let options = {
+        const response = await fetch(this.getUserURL, {
             headers: {
                 'Authorization': 'Bearer ' + accessToken
             },
-            timeout: this.requestTimeout,
-        };
+            signal: AbortSignal.timeout(this.requestTimeout),
+        });
 
-        const response = await axios.get(this.getUserURL, options);
-        return response.data;
+        if (!response.ok) {
+            const err = new Error(response.statusText);
+            err.status = response.status;
+            throw err;
+        }
+
+        return response.json();
     }
 
     extractAccessToken(req) {
@@ -77,10 +81,7 @@ export default class Auth {
 
             req.user = { ...userData, cached: false };
         } catch (err) {
-            const upstreamStatus = err?.response?.status;
-            if (upstreamStatus) {
-                err.status = upstreamStatus;
-            } else if (err.request) {
+            if (err.name === 'TimeoutError' || err.name === 'AbortError') {
                 err.status = 502;
             }
             throw err;

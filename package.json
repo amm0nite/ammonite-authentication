@@ -17,8 +17,8 @@
     "url": "https://github.com/amm0nite/ammonite-authentication/issues"
   },
   "homepage": "https://github.com/amm0nite/ammonite-authentication#readme",
-  "dependencies": {
-    "axios": "^1.13.6"
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
     "express": "^5.2.1",

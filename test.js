@@ -1,6 +1,5 @@
 import assert from 'assert';
 import express from 'express';
-import axios from 'axios';
 
 import Authentication from './index.js';
 
@@ -70,34 +69,25 @@ describe('middleware', function () {
         const token = 'helloworld';
         const options = { headers: { Authorization: `Bearer ${token}` } };
 
-        const firstResponse = await axios.get(baseUrl, options);
-        assert.equal(firstResponse.data.login, login);
-        assert.equal(firstResponse.data.id, id);
-        assert.equal(firstResponse.data.cached, false);
+        const firstResponse = await fetch(baseUrl, options);
+        const firstUser = await firstResponse.json();
+        assert.equal(firstUser.login, login);
+        assert.equal(firstUser.id, id);
+        assert.equal(firstUser.cached, false);
 
-        const secondResponse = await axios.get(baseUrl, options);
-        assert.equal(secondResponse.data.login, login);
-        assert.equal(secondResponse.data.id, id);
-        assert.equal(secondResponse.data.cached, true);
+        const secondResponse = await fetch(baseUrl, options);
+        const secondUser = await secondResponse.json();
+        assert.equal(secondUser.login, login);
+        assert.equal(secondUser.id, id);
+        assert.equal(secondUser.cached, true);
     });
 
     async function checkStatus(expected) {
         const token = 'helloworld';
         const options = { headers: { Authorization: `Bearer ${token}` } };
 
-        try {
-            const response = await axios.get(baseUrl, options);
-            if (expected < 400) {
-                assert.equal(response.status, expected);
-                return;
-            }
-            assert.fail(`Should fail with status ${expected}`);
-        } catch (err) {
-            if (!err.response) {
-                throw err;
-            }
-            assert.equal(err.response.status, expected, err.message);
-        }
+        const response = await fetch(baseUrl, options);
+        assert.equal(response.status, expected);
     }
 
     it('should deny access when authentication fails', async function () {
@@ -147,26 +137,23 @@ describe('middleware', function () {
         const token = 'helloworld';
         const options = { headers: { Authorization: `Bearer ${token}` } };
 
-        const first = await axios.get(baseUrl, options);
-        assert.strictEqual(first.data.tampered, true);
-        assert.strictEqual(first.data.cached, false);
+        const first = await fetch(baseUrl, options);
+        const firstUser = await first.json();
+        assert.strictEqual(firstUser.tampered, true);
+        assert.strictEqual(firstUser.cached, false);
 
-        const second = await axios.get(baseUrl, options);
-        assert.strictEqual(second.data.tampered, undefined);
-        assert.strictEqual(second.data.cached, true);
+        const second = await fetch(baseUrl, options);
+        const secondUser = await second.json();
+        assert.strictEqual(secondUser.tampered, undefined);
+        assert.strictEqual(secondUser.cached, true);
     });
 
     it('should respond 401 with WWW-Authenticate when token is missing', async function () {
         await setup(`${baseUrl}/user200`);
 
-        try {
-            await axios.get(baseUrl);
-            assert.fail('should fail without token');
-        } catch (err) {
-            assert.ok(err.response);
-            assert.strictEqual(err.response.status, 401);
-            assert.strictEqual(err.response.headers['www-authenticate'], 'Bearer');
-        }
+        const response = await fetch(baseUrl);
+        assert.strictEqual(response.status, 401);
+        assert.strictEqual(response.headers.get('www-authenticate'), 'Bearer');
     });
 });
 
