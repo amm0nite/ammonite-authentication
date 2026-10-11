@@ -18,10 +18,10 @@
   },
   "homepage": "https://github.com/amm0nite/ammonite-authentication#readme",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12.0"
   },
   "devDependencies": {
-    "express": "^5.2.1",
-    "mocha": "^11.8.0"
+    "express": "^5.3.0",
+    "mocha": "^12.0.3"
   }
 }
